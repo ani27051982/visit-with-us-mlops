@@ -36,6 +36,10 @@ models/
 *.joblib
 *.pkl
 
+# Allow only the two approved published champions
+!published-models/model_a_champion.joblib
+!published-models/model_b_champion.joblib
+
 # Notebook runtime state
 .DS_Store
 
