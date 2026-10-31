@@ -1,0 +1,74 @@
+{
+    "project": "Visit with Us — Enterprise MLOps",
+    "application_name": "Visit with Us — Wellness Tourism AI",
+    "application_version": "1.0.0",
+    "description": "AI-powered wellness tourism purchase prediction and customer prioritization.",
+    "models": {
+        "model_a": {
+            "display_name": "Historical Purchase Prediction",
+            "description": "Prediction using eligible historical customer and sales-interaction attributes.",
+            "artifact": "published-models/model_a_champion.joblib",
+            "feature_names": [
+                "Age",
+                "TypeofContact",
+                "CityTier",
+                "DurationOfPitch",
+                "Occupation",
+                "Gender",
+                "NumberOfPersonVisiting",
+                "NumberOfFollowups",
+                "ProductPitched",
+                "PreferredPropertyStar",
+                "MaritalStatus",
+                "NumberOfTrips",
+                "Passport",
+                "PitchSatisfactionScore",
+                "OwnCar",
+                "NumberOfChildrenVisiting",
+                "Designation",
+                "MonthlyIncome"
+            ],
+            "threshold": 0.5
+        },
+        "model_b": {
+            "display_name": "Pre-Contact Purchase Prediction",
+            "description": "Prediction using customer information available before marketing outreach.",
+            "artifact": "published-models/model_b_champion.joblib",
+            "feature_names": [
+                "Age",
+                "CityTier",
+                "Occupation",
+                "Gender",
+                "NumberOfPersonVisiting",
+                "PreferredPropertyStar",
+                "MaritalStatus",
+                "NumberOfTrips",
+                "Passport",
+                "OwnCar",
+                "NumberOfChildrenVisiting",
+                "Designation",
+                "MonthlyIncome"
+            ],
+            "threshold": 0.5
+        }
+    },
+    "ui": {
+        "page_title": "Visit with Us | Wellness Tourism AI",
+        "page_icon": "🌍",
+        "layout": "wide",
+        "theme": {
+            "primary": "#176B87",
+            "secondary": "#20A39E",
+            "success": "#2A9D8F",
+            "warning": "#F4A261",
+            "danger": "#E76F51",
+            "background": "#F7FAFC"
+        }
+    },
+    "security": {
+        "verify_sha256": true,
+        "allow_model_retraining": false,
+        "log_customer_inputs": false,
+        "trusted_artifacts_only": true
+    }
+}

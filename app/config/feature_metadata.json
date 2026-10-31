@@ -1,0 +1,231 @@
+{
+    "model_a": {
+        "Age": {
+            "type": "numeric",
+            "default": 36.0,
+            "minimum": 18.0,
+            "maximum": 61.0
+        },
+        "TypeofContact": {
+            "type": "categorical",
+            "categories": [
+                "Company Invited",
+                "Self Enquiry"
+            ],
+            "default": "Self Enquiry"
+        },
+        "CityTier": {
+            "type": "numeric",
+            "default": 1.0,
+            "minimum": 1.0,
+            "maximum": 3.0
+        },
+        "DurationOfPitch": {
+            "type": "numeric",
+            "default": 14.0,
+            "minimum": 5.0,
+            "maximum": 127.0
+        },
+        "Occupation": {
+            "type": "categorical",
+            "categories": [
+                "Free Lancer",
+                "Large Business",
+                "Salaried",
+                "Small Business"
+            ],
+            "default": "Salaried"
+        },
+        "Gender": {
+            "type": "categorical",
+            "categories": [
+                "Fe Male",
+                "Female",
+                "Male"
+            ],
+            "default": "Male"
+        },
+        "NumberOfPersonVisiting": {
+            "type": "numeric",
+            "default": 3.0,
+            "minimum": 1.0,
+            "maximum": 5.0
+        },
+        "NumberOfFollowups": {
+            "type": "numeric",
+            "default": 4.0,
+            "minimum": 1.0,
+            "maximum": 6.0
+        },
+        "ProductPitched": {
+            "type": "categorical",
+            "categories": [
+                "Basic",
+                "Deluxe",
+                "King",
+                "Standard",
+                "Super Deluxe"
+            ],
+            "default": "Basic"
+        },
+        "PreferredPropertyStar": {
+            "type": "numeric",
+            "default": 3.0,
+            "minimum": 3.0,
+            "maximum": 5.0
+        },
+        "MaritalStatus": {
+            "type": "categorical",
+            "categories": [
+                "Divorced",
+                "Married",
+                "Single",
+                "Unmarried"
+            ],
+            "default": "Married"
+        },
+        "NumberOfTrips": {
+            "type": "numeric",
+            "default": 3.0,
+            "minimum": 1.0,
+            "maximum": 21.0
+        },
+        "Passport": {
+            "type": "numeric",
+            "default": 0.0,
+            "minimum": 0.0,
+            "maximum": 1.0
+        },
+        "PitchSatisfactionScore": {
+            "type": "numeric",
+            "default": 3.0,
+            "minimum": 1.0,
+            "maximum": 5.0
+        },
+        "OwnCar": {
+            "type": "numeric",
+            "default": 1.0,
+            "minimum": 0.0,
+            "maximum": 1.0
+        },
+        "NumberOfChildrenVisiting": {
+            "type": "numeric",
+            "default": 1.0,
+            "minimum": 0.0,
+            "maximum": 3.0
+        },
+        "Designation": {
+            "type": "categorical",
+            "categories": [
+                "AVP",
+                "Executive",
+                "Manager",
+                "Senior Manager",
+                "VP"
+            ],
+            "default": "Executive"
+        },
+        "MonthlyIncome": {
+            "type": "numeric",
+            "default": 22403.0,
+            "minimum": 1000.0,
+            "maximum": 98678.0
+        }
+    },
+    "model_b": {
+        "Age": {
+            "type": "numeric",
+            "default": 36.0,
+            "minimum": 18.0,
+            "maximum": 61.0
+        },
+        "CityTier": {
+            "type": "numeric",
+            "default": 1.0,
+            "minimum": 1.0,
+            "maximum": 3.0
+        },
+        "Occupation": {
+            "type": "categorical",
+            "categories": [
+                "Free Lancer",
+                "Large Business",
+                "Salaried",
+                "Small Business"
+            ],
+            "default": "Salaried"
+        },
+        "Gender": {
+            "type": "categorical",
+            "categories": [
+                "Fe Male",
+                "Female",
+                "Male"
+            ],
+            "default": "Male"
+        },
+        "NumberOfPersonVisiting": {
+            "type": "numeric",
+            "default": 3.0,
+            "minimum": 1.0,
+            "maximum": 5.0
+        },
+        "PreferredPropertyStar": {
+            "type": "numeric",
+            "default": 3.0,
+            "minimum": 3.0,
+            "maximum": 5.0
+        },
+        "MaritalStatus": {
+            "type": "categorical",
+            "categories": [
+                "Divorced",
+                "Married",
+                "Single",
+                "Unmarried"
+            ],
+            "default": "Married"
+        },
+        "NumberOfTrips": {
+            "type": "numeric",
+            "default": 3.0,
+            "minimum": 1.0,
+            "maximum": 21.0
+        },
+        "Passport": {
+            "type": "numeric",
+            "default": 0.0,
+            "minimum": 0.0,
+            "maximum": 1.0
+        },
+        "OwnCar": {
+            "type": "numeric",
+            "default": 1.0,
+            "minimum": 0.0,
+            "maximum": 1.0
+        },
+        "NumberOfChildrenVisiting": {
+            "type": "numeric",
+            "default": 1.0,
+            "minimum": 0.0,
+            "maximum": 3.0
+        },
+        "Designation": {
+            "type": "categorical",
+            "categories": [
+                "AVP",
+                "Executive",
+                "Manager",
+                "Senior Manager",
+                "VP"
+            ],
+            "default": "Executive"
+        },
+        "MonthlyIncome": {
+            "type": "numeric",
+            "default": 22403.0,
+            "minimum": 1000.0,
+            "maximum": 98678.0
+        }
+    }
+}

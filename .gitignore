@@ -52,3 +52,8 @@ published-models/*.tmp
 artifacts/
 private-data/
 published-models/*.tmp
+
+
+# Approved champion model artifacts
+!published-models/model_a_champion.joblib
+!published-models/model_b_champion.joblib

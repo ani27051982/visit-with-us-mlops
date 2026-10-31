@@ -142,7 +142,8 @@ jobs:
         \n   published-models/\n"
     - name: Commit approved models
       run: "git config user.name \"github-actions[bot]\"\ngit config user.email \\\
-        \n  \"41898282+github-actions[bot]@users.noreply.github.com\"\n\ngit add published-models/\n\
+        \n  \"41898282+github-actions[bot]@users.noreply.github.com\"\n\ngit add -f published-models/model_a_champion.joblib published-models/model_b_champion.joblib
+git add published-models/champion_manifest.json\n\
         \nif git diff --cached --quiet; then\n  echo \"No model artifact changes to\
         \ publish.\"\nelse\n  git commit -m \"Publish validated MLOps champion models\"\
         \n  git push origin HEAD:main\nfi\n"
