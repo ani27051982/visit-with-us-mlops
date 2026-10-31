@@ -7,7 +7,7 @@ concurrency:
 jobs:
   register-data:
     name: Register Dataset
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
     - uses: actions/checkout@v6
@@ -34,7 +34,7 @@ jobs:
   prepare-data:
     name: Prepare Dataset
     needs: register-data
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
     - uses: actions/checkout@v6
@@ -61,7 +61,7 @@ jobs:
   train-models:
     name: Train & Optimize Models
     needs: prepare-data
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
     - uses: actions/checkout@v6
@@ -87,7 +87,7 @@ jobs:
   validate-artifacts:
     name: Validate Model Artifacts
     needs: train-models
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
     - uses: actions/checkout@v6
@@ -113,7 +113,7 @@ jobs:
     needs: validate-artifacts
     if: github.event_name == 'workflow_dispatch' && inputs.publish_models == true
       && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: write
