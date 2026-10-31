@@ -1,0 +1,57 @@
+{
+  "project": "Visit with Us \u2014 Enterprise MLOps",
+  "champions": {
+    "model_a": {
+      "algorithm": "RandomForest",
+      "variant": "tuned",
+      "cv_average_precision": 0.7941901533220476,
+      "feature_names": [
+        "Age",
+        "TypeofContact",
+        "CityTier",
+        "DurationOfPitch",
+        "Occupation",
+        "Gender",
+        "NumberOfPersonVisiting",
+        "NumberOfFollowups",
+        "ProductPitched",
+        "PreferredPropertyStar",
+        "MaritalStatus",
+        "NumberOfTrips",
+        "Passport",
+        "PitchSatisfactionScore",
+        "OwnCar",
+        "NumberOfChildrenVisiting",
+        "Designation",
+        "MonthlyIncome"
+      ],
+      "artifact": "artifacts/training/model_a_champion.joblib",
+      "sha256": "e6055f50390e273f45291b7c6de7b4c961b3c1874471884902e7bb1612f117b8"
+    },
+    "model_b": {
+      "algorithm": "RandomForest",
+      "variant": "tuned",
+      "cv_average_precision": 0.7056091045743765,
+      "feature_names": [
+        "Age",
+        "CityTier",
+        "Occupation",
+        "Gender",
+        "NumberOfPersonVisiting",
+        "PreferredPropertyStar",
+        "MaritalStatus",
+        "NumberOfTrips",
+        "Passport",
+        "OwnCar",
+        "NumberOfChildrenVisiting",
+        "Designation",
+        "MonthlyIncome"
+      ],
+      "artifact": "artifacts/training/model_b_champion.joblib",
+      "sha256": "a09f9a9aae49236b0cfe4904111605ebbbd5e2ac3b5436f0d71050add527ab2c"
+    }
+  },
+  "training_records": 3302,
+  "dataset_version": "1.0.0",
+  "created_at_utc": "2026-10-31T13:50:19.375979+00:00"
+}
