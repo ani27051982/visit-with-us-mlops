@@ -1,0 +1,13 @@
+{
+    "project": "Visit with Us — Enterprise MLOps",
+    "phase": 7,
+    "cell": 2,
+    "status": "SCRIPTS_GENERATED",
+    "scripts": {
+        "registration": "/content/drive/MyDrive/MLOps_Projects/visit-with-us-mlops/github-repository/scripts/register_data.py",
+        "preparation": "/content/drive/MyDrive/MLOps_Projects/visit-with-us-mlops/github-repository/scripts/prepare_data.py"
+    },
+    "syntax_validated": true,
+    "runtime_tested": false,
+    "generated_at_utc": "2026-10-31T12:51:23.934373+00:00"
+}

@@ -1,0 +1,30 @@
+{
+    "project": "Visit with Us — Enterprise MLOps",
+    "phase": 7,
+    "cell": 1,
+    "status": "READY_FOR_SCRIPT_GENERATION",
+    "repository_directory": "/content/drive/MyDrive/MLOps_Projects/visit-with-us-mlops/github-repository",
+    "directories_created": [
+        ".github/workflows",
+        "config",
+        "data",
+        "src",
+        "src/utils",
+        "scripts",
+        "tests",
+        "models",
+        "experiments",
+        "reports",
+        "app",
+        "notebooks"
+    ],
+    "files": {
+        "Dependencies": "/content/drive/MyDrive/MLOps_Projects/visit-with-us-mlops/github-repository/requirements.txt",
+        "Git ignore": "/content/drive/MyDrive/MLOps_Projects/visit-with-us-mlops/github-repository/.gitignore",
+        "Pipeline configuration": "/content/drive/MyDrive/MLOps_Projects/visit-with-us-mlops/github-repository/config/pipeline.json",
+        "Shared utilities": "/content/drive/MyDrive/MLOps_Projects/visit-with-us-mlops/github-repository/src/utils/common.py",
+        "README": "/content/drive/MyDrive/MLOps_Projects/visit-with-us-mlops/github-repository/README.md"
+    },
+    "publishing_enabled": false,
+    "generated_at_utc": "2026-10-31T12:50:13.093177+00:00"
+}

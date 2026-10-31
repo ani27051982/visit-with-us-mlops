@@ -1,0 +1,19 @@
+{
+    "project": "Visit with Us — Enterprise MLOps",
+    "phase": 7,
+    "cell": 4,
+    "status": "GENERATED",
+    "workflow": "/content/drive/MyDrive/MLOps_Projects/visit-with-us-mlops/github-repository/.github/workflows/pipeline.yml",
+    "validation_script": "/content/drive/MyDrive/MLOps_Projects/visit-with-us-mlops/github-repository/scripts/validate_artifacts.py",
+    "jobs": [
+        "prepare-data",
+        "publish-models",
+        "register-data",
+        "train-models",
+        "validate-artifacts"
+    ],
+    "publishing_default": false,
+    "yaml_syntax_validated": true,
+    "runtime_tested": false,
+    "generated_at_utc": "2026-10-31T13:01:49.265752+00:00"
+}

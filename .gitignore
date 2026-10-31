@@ -1,0 +1,50 @@
+# Credentials and environment files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*token*
+*credentials*
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# Local logs and temporary files
+logs/
+tmp/
+temp/
+*.log
+
+# Private customer datasets and predictions
+data/registered/
+data/splits/
+data/processed/
+reports/evaluation/predictions/
+*holdout_predictions.csv
+
+# Local generated artifacts
+experiments/
+reports/
+models/
+*.joblib
+*.pkl
+
+# Notebook runtime state
+.DS_Store
+
+# GitHub Actions temporary artifacts
+artifacts/
+private-data/
+published-models/*.tmp
+
+# GitHub Actions temporary artifacts
+artifacts/
+private-data/
+published-models/*.tmp

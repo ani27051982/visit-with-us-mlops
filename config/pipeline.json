@@ -1,0 +1,59 @@
+{
+    "project": {
+        "name": "Visit with Us — Enterprise MLOps",
+        "slug": "visit-with-us-mlops",
+        "version": "1.0.0"
+    },
+    "dataset": {
+        "filename": "tourism.csv",
+        "target": "ProdTaken",
+        "customer_id": "CustomerID",
+        "test_size": 0.2,
+        "random_state": 42
+    },
+    "models": {
+        "model_a": {
+            "purpose": "historical_purchase_prediction",
+            "excluded_columns": [
+                "CustomerID",
+                "ProdTaken",
+                "Unnamed: 0"
+            ]
+        },
+        "model_b": {
+            "purpose": "pre_contact_purchase_prediction",
+            "excluded_columns": [
+                "CustomerID",
+                "DurationOfPitch",
+                "NumberOfFollowups",
+                "PitchSatisfactionScore",
+                "ProdTaken",
+                "ProductPitched",
+                "TypeofContact",
+                "Unnamed: 0"
+            ]
+        }
+    },
+    "training": {
+        "cv_folds": 5,
+        "primary_metric": "average_precision",
+        "scoring": [
+            "average_precision",
+            "roc_auc",
+            "precision",
+            "recall",
+            "f1"
+        ],
+        "random_state": 42
+    },
+    "artifacts": {
+        "models": "models",
+        "experiments": "experiments",
+        "reports": "reports"
+    },
+    "publishing": {
+        "enabled": false,
+        "branch": "main",
+        "require_quality_gate": true
+    }
+}

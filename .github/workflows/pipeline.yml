@@ -1,0 +1,156 @@
+name: Visit with Us — MLOps Pipeline
+permissions:
+  contents: read
+concurrency:
+  group: visit-with-us-mlops-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  register-data:
+    name: Register Dataset
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: pip
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+    - name: Verify public tourism dataset
+      run: "test -s data/raw/tourism.csv || {\n  echo \"::error::tourism.csv missing\
+        \ or empty\"\n  exit 1\n}\n"
+    - name: Register dataset
+      run: 'python scripts/register_data.py --data data/raw/tourism.csv --config config/pipeline.json
+        --output artifacts/registration
+
+        '
+    - name: Upload registered inputs
+      uses: actions/upload-artifact@v4
+      with:
+        name: registered-inputs
+        path: artifacts/registration/
+        retention-days: 1
+  prepare-data:
+    name: Prepare Dataset
+    needs: register-data
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: pip
+    - run: pip install -r requirements.txt
+    - uses: actions/download-artifact@v4
+      with:
+        name: registered-inputs
+        path: .
+    - name: Prepare dual-model datasets
+      run: 'python scripts/prepare_data.py --data data/raw/tourism.csv --config config/pipeline.json
+        --output artifacts/prepared
+
+        '
+    - name: Upload prepared datasets
+      uses: actions/upload-artifact@v4
+      with:
+        name: prepared-data
+        path: artifacts/prepared/
+        retention-days: 1
+  train-models:
+    name: Train & Optimize Models
+    needs: prepare-data
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: pip
+    - run: pip install -r requirements.txt
+    - uses: actions/download-artifact@v4
+      with:
+        name: prepared-data
+        path: artifacts/prepared
+    - name: Train models
+      run: "python scripts/train_models.py \\\n  --prepared artifacts/prepared \\\n\
+        \  --config config/pipeline.json \\\n  --output artifacts/training \\\n  --iterations\
+        \ 8\n"
+    - name: Upload model artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: trained-models
+        path: artifacts/training/
+        retention-days: 7
+  validate-artifacts:
+    name: Validate Model Artifacts
+    needs: train-models
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: pip
+    - run: pip install -r requirements.txt
+    - uses: actions/download-artifact@v4
+      with:
+        name: trained-models
+        path: artifacts/training
+    - name: Validate artifacts
+      run: "python scripts/validate_artifacts.py \\\n  --training artifacts/training\
+        \ \\\n  --output artifacts/validation\n"
+    - uses: actions/upload-artifact@v4
+      with:
+        name: validation-evidence
+        path: artifacts/validation/
+        retention-days: 30
+  publish-models:
+    name: Publish Approved Models
+    needs: validate-artifacts
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_models == true
+      && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: true
+    - uses: actions/download-artifact@v4
+      with:
+        name: trained-models
+        path: artifacts/training
+    - uses: actions/download-artifact@v4
+      with:
+        name: validation-evidence
+        path: artifacts/validation
+    - name: Verify validation gate
+      run: "python - <<'PY'\nimport json\nfrom pathlib import Path\n\nreport = json.loads(\n\
+        \    Path(\n        \"artifacts/validation/validation_report.json\"\n    ).read_text()\n\
+        )\n\nif report[\"status\"] != \"PASSED\":\n    raise SystemExit(\"Validation\
+        \ gate failed.\")\n\nif set(report[\"models\"]) != {\n    \"model_a\", \"\
+        model_b\"\n}:\n    raise SystemExit(\"Model validation incomplete.\")\nPY\n"
+    - name: Stage approved model artifacts
+      run: "mkdir -p published-models\ncp artifacts/training/model_a_champion.joblib\
+        \ \\\n   published-models/\ncp artifacts/training/model_b_champion.joblib\
+        \ \\\n   published-models/\ncp artifacts/training/champion_manifest.json \\\
+        \n   published-models/\n"
+    - name: Commit approved models
+      run: "git config user.name \"github-actions[bot]\"\ngit config user.email \\\
+        \n  \"41898282+github-actions[bot]@users.noreply.github.com\"\n\ngit add published-models/\n\
+        \nif git diff --cached --quiet; then\n  echo \"No model artifact changes to\
+        \ publish.\"\nelse\n  git commit -m \"Publish validated MLOps champion models\"\
+        \n  git push origin HEAD:main\nfi\n"
+'on':
+  workflow_dispatch:
+    inputs:
+      publish_models:
+        description: Publish approved model artifacts
+        required: true
+        type: boolean
+        default: false
