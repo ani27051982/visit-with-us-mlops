@@ -360,11 +360,26 @@ if submitted:
         st.write(prediction_interpretation(result))
 
         with st.expander("📋 Customer Input Summary"):
+
+            summary_rows = [
+                {
+                    "Feature": str(feature),
+                    "Value": (
+                        "Not provided"
+                        if value is None or pd.isna(value)
+                        else str(value)
+                    )
+                }
+                for feature, value in customer_inputs.items()
+            ]
+
+            summary_df = pd.DataFrame(
+                summary_rows,
+                columns=["Feature", "Value"]
+            ).astype("string")
+
             st.dataframe(
-                pd.DataFrame([
-                    {"Feature": key, "Value": value}
-                    for key, value in customer_inputs.items()
-                ]),
+                summary_df,
                 use_container_width=True,
                 hide_index=True
             )
