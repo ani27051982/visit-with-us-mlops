@@ -31,50 +31,69 @@ GitHub Actions CI/CD implementation completed.
 
 ## 🌐 Live Cloud Deployments
 
-### 🚀 Streamlit Community Cloud
+### Streamlit Community Cloud
 
-**Live Application:** [https://visit-with-us-wellness-ai.streamlit.app/](https://visit-with-us-wellness-ai.streamlit.app/)
+[🚀 Open Live Streamlit Application](https://visit-with-us-wellness-ai.streamlit.app/)
 
-Supports both prediction scenarios, interactive customer
-forms, probability visualizations and business interpretations.
+Interactive customer purchase prediction using
+Model A and Model B.
 
-### 🤗 Hugging Face Spaces
+### Hugging Face Spaces
 
-**Live Docker Space:** [https://huggingface.co/spaces/animesh27051982/visit-with-us-wellness-ai](https://huggingface.co/spaces/animesh27051982/visit-with-us-wellness-ai)
+[🤗 Open Hugging Face Docker Space](https://huggingface.co/spaces/animesh27051982/visit-with-us-wellness-ai)
 
-Docker-based deployment using verified champion models,
-Python 3.11 and pinned dependencies.
+Docker-based deployment using validated champion models.
+
+### GitHub Repository
+
+[📂 View Project Source Code](https://github.com/ani27051982/visit-with-us-mlops)
 
 <!-- DEPLOYMENT_LINKS_END -->
 
 <!-- CICD_STATUS_START -->
 
-## ⚙️ GitHub Actions — CI/CD Implementation
+## ⚙️ GitHub Actions — Automated CI/CD
 
-**Implementation Status: Completed**
+**Status: Implemented and Verified**
 
-The project implements an automated five-job MLOps pipeline:
+Both project workflows support automatic execution
+when relevant files are pushed to the `main` branch.
 
-1. **Register Dataset** — Validates the approved tourism dataset.
-2. **Prepare Dataset** — Performs leakage-safe data preparation.
-3. **Train & Optimize Models** — Trains and tunes both classifiers.
-4. **Validate Model Artifacts** — Applies quality and integrity checks.
-5. **Publish Approved Models** — Publishes validated champion artifacts when manually authorized.
+### 🤖 MLOps Pipeline
 
-### Automation
+The five-job pipeline includes:
 
-- Automatic CI execution is configured for relevant source changes on `main`.
-- Manual execution remains available through `workflow_dispatch`.
-- Champion model publishing requires explicit authorization.
-- GitHub Actions uses Python 3.11 and Ubuntu 24.04.
-- Automated application validation is configured for Streamlit changes.
+1. Register Dataset
+2. Prepare Dataset
+3. Train & Optimize Models
+4. Validate Model Artifacts
+5. Publish Approved Models
 
-### Published Champion Models
+**Automatic execution:** First four jobs.
 
-- `published-models/model_a_champion.joblib`
-- `published-models/model_b_champion.joblib`
-- `published-models/champion_manifest.json`
+**Champion publishing:** Manual approval required.
 
-Both champion artifacts are protected by SHA-256 integrity verification.
+**Verified automatic runs:** 1 successful run.
+
+[View successful automatic MLOps run](https://github.com/ani27051982/visit-with-us-mlops/actions/runs/41280048719)
+
+### 🚀 Streamlit Application Validation
+
+The application workflow automatically validates
+relevant Streamlit and model integration changes.
+
+**Verified automatic runs:** 3 successful runs.
+
+[View successful Streamlit validation run](https://github.com/ani27051982/visit-with-us-mlops/actions/runs/41281006920)
+
+### 🔐 Engineering Controls
+
+- Automatic `push` triggers on `main`.
+- Manual `workflow_dispatch` execution.
+- Controlled champion publishing.
+- Python 3.11.
+- Ubuntu 24.04 runners.
+- SHA-256 model integrity verification.
+- Scoped GitHub Actions permissions.
 
 <!-- CICD_STATUS_END -->
