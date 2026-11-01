@@ -1,4 +1,4 @@
-"""Unit tests for prediction service validation."""
+"""Unit tests for customer input validation."""
 
 import numpy as np
 import pytest
@@ -9,13 +9,11 @@ from app.services.prediction_service import (
 )
 
 
-def test_numeric_customer_input():
+def test_valid_numeric_input():
     metadata = {
         "Age": {
             "type": "numeric",
-            "default": 35,
-            "minimum": 18,
-            "maximum": 80
+            "default": 35
         }
     }
 
@@ -42,6 +40,19 @@ def test_invalid_numeric_input():
         )
 
 
+def test_boolean_rejected_as_numeric():
+    metadata = {
+        "Age": {"type": "numeric"}
+    }
+
+    with pytest.raises(InputValidationError):
+        validate_customer_input(
+            {"Age": True},
+            metadata,
+            ["Age"]
+        )
+
+
 def test_missing_required_feature():
     metadata = {
         "Age": {"type": "numeric"}
@@ -62,17 +73,23 @@ def test_unexpected_feature():
 
     with pytest.raises(InputValidationError):
         validate_customer_input(
-            {"Age": 35, "Unknown": 1},
+            {
+                "Age": 35,
+                "Unexpected": 10
+            },
             metadata,
             ["Age"]
         )
 
 
-def test_supported_categorical_input():
+def test_valid_categorical_input():
     metadata = {
         "Occupation": {
             "type": "categorical",
-            "categories": ["Salaried", "Business"]
+            "categories": [
+                "Salaried",
+                "Business"
+            ]
         }
     }
 
@@ -85,11 +102,14 @@ def test_supported_categorical_input():
     assert result.loc[0, "Occupation"] == "Salaried"
 
 
-def test_unsupported_categorical_input():
+def test_invalid_categorical_input():
     metadata = {
         "Occupation": {
             "type": "categorical",
-            "categories": ["Salaried", "Business"]
+            "categories": [
+                "Salaried",
+                "Business"
+            ]
         }
     }
 
@@ -98,4 +118,17 @@ def test_unsupported_categorical_input():
             {"Occupation": "Unknown"},
             metadata,
             ["Occupation"]
+        )
+
+
+def test_nonfinite_numeric_input():
+    metadata = {
+        "Age": {"type": "numeric"}
+    }
+
+    with pytest.raises(InputValidationError):
+        validate_customer_input(
+            {"Age": float("inf")},
+            metadata,
+            ["Age"]
         )

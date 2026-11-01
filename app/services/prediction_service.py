@@ -1,4 +1,4 @@
-"""Secure, reusable prediction services for Visit with Us."""
+"""Verified champion loading and customer prediction services."""
 
 import hashlib
 import json
@@ -13,23 +13,23 @@ LOGGER = logging.getLogger("visit_with_us.prediction")
 
 
 class PredictionServiceError(Exception):
-    """Base exception for prediction service failures."""
+    """Base prediction-service exception."""
 
 
 class ModelIntegrityError(PredictionServiceError):
-    """Raised when a model artifact fails integrity checks."""
+    """Raised when a champion artifact cannot be verified."""
 
 
 class InputValidationError(PredictionServiceError):
-    """Raised when customer inputs are invalid."""
+    """Raised for invalid customer input."""
 
 
 class ModelInferenceError(PredictionServiceError):
-    """Raised when model inference fails."""
+    """Raised when prediction execution fails."""
 
 
 def sha256_file(path):
-    """Calculate SHA-256 without loading the entire file."""
+    """Calculate a file's SHA-256 checksum in chunks."""
 
     digest = hashlib.sha256()
 
@@ -44,46 +44,60 @@ def sha256_file(path):
 
 
 def load_json(path):
-    """Load and validate a JSON configuration object."""
+    """Load a JSON configuration object."""
 
     path = Path(path)
 
     if not path.is_file():
         raise FileNotFoundError(
-            f"Required configuration file missing: {path.name}"
+            f"Required configuration missing: {path.name}"
         )
 
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(
+            path.read_text(encoding="utf-8")
+        )
     except (OSError, json.JSONDecodeError) as exc:
         raise PredictionServiceError(
-            f"Unable to load configuration: {path.name}"
+            f"Unable to read configuration: {path.name}"
         ) from exc
 
     if not isinstance(data, dict):
         raise PredictionServiceError(
-            f"Configuration must be a JSON object: {path.name}"
+            f"Invalid configuration structure: {path.name}"
         )
 
     return data
 
 
 def validate_model_manifest(manifest):
-    """Validate the expected published champion manifest."""
+    """Validate the published champion manifest structure."""
+
+    if not isinstance(manifest, dict):
+        raise ModelIntegrityError(
+            "Champion manifest must be a JSON object."
+        )
 
     champions = manifest.get("champions")
 
     if not isinstance(champions, dict):
         raise ModelIntegrityError(
-            "Champion manifest is missing model definitions."
+            "Champion model definitions are missing."
         )
 
-    if set(champions) != {"model_a", "model_b"}:
+    expected_tracks = {"model_a", "model_b"}
+
+    if set(champions) != expected_tracks:
         raise ModelIntegrityError(
-            "Expected Model A and Model B in manifest."
+            "Manifest must contain Model A and Model B."
         )
 
     for track, metadata in champions.items():
+
+        if not isinstance(metadata, dict):
+            raise ModelIntegrityError(
+                f"{track}: invalid model metadata."
+            )
 
         required = {
             "algorithm",
@@ -95,8 +109,7 @@ def validate_model_manifest(manifest):
 
         if missing:
             raise ModelIntegrityError(
-                f"{track}: missing metadata fields: "
-                f"{sorted(missing)}"
+                f"{track}: missing metadata {sorted(missing)}"
             )
 
         features = metadata["feature_names"]
@@ -104,11 +117,11 @@ def validate_model_manifest(manifest):
         if (
             not isinstance(features, list)
             or not features
-            or len(features) != len(set(features))
             or not all(
                 isinstance(name, str) and name.strip()
                 for name in features
             )
+            or len(features) != len(set(features))
         ):
             raise ModelIntegrityError(
                 f"{track}: invalid feature schema."
@@ -125,7 +138,7 @@ def validate_model_manifest(manifest):
             )
         ):
             raise ModelIntegrityError(
-                f"{track}: invalid SHA-256 metadata."
+                f"{track}: invalid SHA-256 checksum."
             )
 
     return champions
@@ -133,39 +146,31 @@ def validate_model_manifest(manifest):
 
 def load_champion_models(
     repository_root,
-    manifest_path=None,
     trusted_source=False
 ):
-    """Load verified champion pipelines from trusted artifacts.
+    """Load SHA-256-verified champions from a trusted source.
 
     WARNING:
-        joblib deserialization can execute arbitrary code.
-        Only use artifacts from a trusted publishing workflow.
-        A checksum does not independently prove provenance.
+        joblib uses pickle-based deserialization, which
+        can execute code. Checksums detect changes relative
+        to the manifest but do not establish its provenance.
+        Only deploy artifacts from a trusted CI/CD workflow.
     """
 
     if not trusted_source:
         raise ModelIntegrityError(
-            "Model loading requires a trusted artifact source."
+            "Trusted artifact source confirmation is required."
         )
 
-    repository_root = Path(repository_root).resolve()
+    root = Path(repository_root).resolve()
 
     models_dir = (
-        repository_root / "published-models"
+        root / "published-models"
     ).resolve()
 
-    if manifest_path is None:
-        manifest_path = (
-            models_dir / "champion_manifest.json"
-        )
-
-    manifest_path = Path(manifest_path).resolve()
-
-    if manifest_path.parent != models_dir:
-        raise ModelIntegrityError(
-            "Manifest must be located in published-models."
-        )
+    manifest_path = (
+        models_dir / "champion_manifest.json"
+    )
 
     manifest = load_json(manifest_path)
     champions = validate_model_manifest(manifest)
@@ -182,49 +187,53 @@ def load_champion_models(
 
         if model_path.parent != models_dir:
             raise ModelIntegrityError(
-                f"{track}: invalid model artifact location."
+                f"{track}: unsafe model path."
             )
 
         if not model_path.is_file():
             raise ModelIntegrityError(
-                f"{track}: published model file is missing."
+                f"{track}: published champion is missing."
             )
 
-        actual_hash = sha256_file(model_path)
+        actual_sha = sha256_file(model_path)
 
-        if actual_hash.lower() != metadata["sha256"].lower():
+        if actual_sha.lower() != metadata["sha256"].lower():
             raise ModelIntegrityError(
-                f"{track}: model checksum verification failed."
+                f"{track}: SHA-256 verification failed."
             )
 
         try:
             model = joblib.load(model_path)
+
         except Exception as exc:
             LOGGER.exception(
-                "Trusted model loading failed: %s", track
+                "Champion loading failed: %s", track
             )
             raise ModelIntegrityError(
-                f"{track}: unable to load the published model."
+                f"{track}: model could not be loaded."
             ) from exc
 
-        if not callable(getattr(model, "predict_proba", None)):
+        if not callable(
+            getattr(model, "predict_proba", None)
+        ):
             raise ModelIntegrityError(
-                f"{track}: model lacks probability prediction."
+                f"{track}: predict_proba unavailable."
             )
 
-        if not hasattr(model, "classes_"):
+        classes = list(
+            getattr(model, "classes_", [])
+        )
+
+        if 1 not in classes:
             raise ModelIntegrityError(
-                f"{track}: fitted class metadata is missing."
+                f"{track}: positive class 1 is missing."
             )
 
-        if 1 not in list(model.classes_):
-            raise ModelIntegrityError(
-                f"{track}: positive class 1 is unavailable."
-            )
-
-        # Verify fitted pipeline feature names where exposed.
         if hasattr(model, "feature_names_in_"):
-            fitted_features = list(model.feature_names_in_)
+
+            fitted_features = list(
+                model.feature_names_in_
+            )
 
             if fitted_features != metadata["feature_names"]:
                 raise ModelIntegrityError(
@@ -234,8 +243,7 @@ def load_champion_models(
         loaded_models[track] = model
 
         LOGGER.info(
-            "Verified champion loaded successfully: %s",
-            track
+            "Verified champion loaded: %s", track
         )
 
     return loaded_models, manifest
@@ -246,7 +254,7 @@ def validate_customer_input(
     feature_metadata,
     expected_features
 ):
-    """Validate and normalize one customer input record."""
+    """Normalize and validate one customer feature record."""
 
     if not isinstance(customer_data, dict):
         raise InputValidationError(
@@ -272,7 +280,7 @@ def validate_customer_input(
 
     if missing:
         raise InputValidationError(
-            "Missing required customer fields: "
+            "Missing customer fields: "
             + ", ".join(missing)
         )
 
@@ -288,7 +296,7 @@ def validate_customer_input(
 
         if feature not in feature_metadata:
             raise InputValidationError(
-                f"Feature metadata missing: {feature}"
+                f"Missing feature metadata: {feature}"
             )
 
         specification = feature_metadata[feature]
@@ -297,7 +305,10 @@ def validate_customer_input(
 
         if feature_type == "numeric":
 
-            if value is None or value == "":
+            if value is None or (
+                isinstance(value, str)
+                and not value.strip()
+            ):
                 normalized[feature] = np.nan
                 continue
 
@@ -322,11 +333,16 @@ def validate_customer_input(
 
         elif feature_type == "categorical":
 
-            if value is None or pd.isna(value):
+            if value is None:
                 normalized[feature] = np.nan
                 continue
 
-            category = str(value).strip()
+            if not isinstance(value, str):
+                raise InputValidationError(
+                    f"{feature} must be a text category."
+                )
+
+            category = value.strip()
 
             if not category:
                 normalized[feature] = np.nan
@@ -334,7 +350,9 @@ def validate_customer_input(
 
             allowed = [
                 str(item)
-                for item in specification.get("categories", [])
+                for item in specification.get(
+                    "categories", []
+                )
             ]
 
             if allowed and category not in allowed:
@@ -346,7 +364,7 @@ def validate_customer_input(
 
         else:
             raise InputValidationError(
-                f"Unsupported feature type: {feature}"
+                f"Unsupported feature type for {feature}."
             )
 
     return pd.DataFrame(
@@ -362,18 +380,21 @@ def predict_customer(
     expected_features,
     threshold=0.50
 ):
-    """Generate one validated purchase prediction."""
+    """Generate one validated purchase probability."""
 
     try:
         threshold = float(threshold)
     except (TypeError, ValueError) as exc:
         raise InputValidationError(
-            "Classification threshold must be numeric."
+            "Decision threshold must be numeric."
         ) from exc
 
-    if not np.isfinite(threshold) or not 0 < threshold < 1:
+    if (
+        not np.isfinite(threshold)
+        or not 0 < threshold < 1
+    ):
         raise InputValidationError(
-            "Classification threshold must be between 0 and 1."
+            "Decision threshold must be between 0 and 1."
         )
 
     features = validate_customer_input(
@@ -392,42 +413,40 @@ def predict_customer(
 
         if 1 not in classes:
             raise ModelInferenceError(
-                "Model does not support the positive class."
+                "Positive class is unavailable."
             )
 
         positive_index = classes.index(1)
 
         if (
             probabilities.ndim != 2
-            or probabilities.shape[0] != 1
-            or probabilities.shape[1] != len(classes)
+            or probabilities.shape != (1, len(classes))
         ):
             raise ModelInferenceError(
-                "Unexpected prediction probability shape."
+                "Invalid probability output shape."
             )
 
         probability = float(
             probabilities[0, positive_index]
         )
 
-        if not np.isfinite(probability):
+        if (
+            not np.isfinite(probability)
+            or not 0 <= probability <= 1
+        ):
             raise ModelInferenceError(
-                "Model returned a non-finite probability."
-            )
-
-        if not 0 <= probability <= 1:
-            raise ModelInferenceError(
-                "Model returned a probability outside [0, 1]."
+                "Model returned an invalid probability."
             )
 
     except ModelInferenceError:
         raise
 
     except Exception as exc:
-        LOGGER.exception("Customer prediction failed.")
+        LOGGER.exception(
+            "Prediction inference failed."
+        )
         raise ModelInferenceError(
-            "Prediction could not be completed. "
-            "Please verify the input and model configuration."
+            "Prediction could not be completed."
         ) from exc
 
     predicted_class = int(

@@ -1,4 +1,4 @@
-"""Integration tests for published champion models."""
+"""Integration tests for trusted published champions."""
 
 from pathlib import Path
 
@@ -16,20 +16,24 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.fixture(scope="module")
 def model_context():
+
     models, manifest = load_champion_models(
         ROOT,
         trusted_source=True
     )
 
-    metadata = load_json(
+    feature_metadata = load_json(
         ROOT / "app/config/feature_metadata.json"
     )
 
-    return models, manifest, metadata
+    return models, manifest, feature_metadata
 
 
-@pytest.mark.parametrize("track", ["model_a", "model_b"])
-def test_published_model_prediction(track, model_context):
+@pytest.mark.parametrize(
+    "track",
+    ["model_a", "model_b"]
+)
+def test_champion_inference(track, model_context):
 
     models, manifest, feature_metadata = model_context
 
@@ -38,7 +42,9 @@ def test_published_model_prediction(track, model_context):
     ][track]["feature_names"]
 
     sample = {
-        feature: feature_metadata[track][feature].get("default")
+        feature: feature_metadata[
+            track
+        ][feature].get("default")
         for feature in expected_features
     }
 
@@ -50,6 +56,12 @@ def test_published_model_prediction(track, model_context):
         threshold=0.50
     )
 
-    assert np.isfinite(result["purchase_probability"])
-    assert 0 <= result["purchase_probability"] <= 1
+    probability = result["purchase_probability"]
+
+    assert np.isfinite(probability)
+    assert 0 <= probability <= 1
     assert result["predicted_class"] in (0, 1)
+    assert result["predicted_label"] in (
+        "Likely Purchaser",
+        "Unlikely Purchaser"
+    )

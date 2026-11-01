@@ -1,4 +1,4 @@
-"""Visit with Us — Wellness Tourism AI Streamlit application."""
+"""Visit with Us — Wellness Tourism AI application."""
 
 import logging
 import sys
@@ -21,6 +21,7 @@ from app.services.prediction_service import (
     load_json,
     predict_customer
 )
+
 from app.utils.app_helpers import (
     format_probability,
     prediction_interpretation,
@@ -35,10 +36,13 @@ logging.basicConfig(
 )
 
 # ------------------------------------------------------------
-# 1. Application Configuration
+# 1. Load Application Configuration
 # ------------------------------------------------------------
 
-CONFIG = load_json(ROOT / "app/config/app_config.json")
+CONFIG = load_json(
+    ROOT / "app/config/app_config.json"
+)
+
 FEATURE_METADATA = load_json(
     ROOT / "app/config/feature_metadata.json"
 )
@@ -46,13 +50,14 @@ FEATURE_METADATA = load_json(
 st.set_page_config(
     page_title=CONFIG["ui"]["page_title"],
     page_icon=CONFIG["ui"]["page_icon"],
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 THEME = CONFIG["ui"]["theme"]
 
 # ------------------------------------------------------------
-# 2. Application Styling
+# 2. Professional Application Styling
 # ------------------------------------------------------------
 
 st.markdown(
@@ -61,22 +66,29 @@ st.markdown(
     .block-container {
         max-width: 1250px;
         padding-top: 1.5rem;
+        padding-bottom: 2rem;
     }
+
     .hero {
-        background: linear-gradient(120deg, #176B87, #20A39E);
+        background: linear-gradient(
+            120deg, #176B87, #20A39E
+        );
         padding: 2rem;
         border-radius: 18px;
         margin-bottom: 1.5rem;
     }
+
     .hero h1 {
         color: white;
         font-size: 2.2rem;
         margin-bottom: 0.5rem;
     }
+
     .hero p {
         color: #F0FBFC;
         margin-bottom: 0;
     }
+
     .result-card {
         padding: 1.2rem;
         border-radius: 14px;
@@ -89,10 +101,12 @@ st.markdown(
 )
 
 # ------------------------------------------------------------
-# 3. Trusted Model Loading
+# 3. Load Trusted Champion Models
 # ------------------------------------------------------------
 
-@st.cache_resource(show_spinner="Verifying champion models...")
+@st.cache_resource(
+    show_spinner="Verifying champion models..."
+)
 def get_models():
     return load_champion_models(
         repository_root=ROOT,
@@ -103,7 +117,7 @@ try:
     MODELS, MANIFEST = get_models()
 
 except (ModelIntegrityError, OSError) as exc:
-    LOGGER.exception("Model initialization failed.")
+    LOGGER.exception("Champion initialization failed.")
     st.error(friendly_error_message(exc))
     st.stop()
 
@@ -114,58 +128,91 @@ except (ModelIntegrityError, OSError) as exc:
 st.markdown(
     """
     <div class="hero">
-      <h1>🌍 Visit with Us — Wellness Tourism AI</h1>
-      <p>
-        Intelligent customer purchase prediction and
-        data-driven wellness tourism marketing.
-      </p>
+        <h1>🌍 Visit with Us — Wellness Tourism AI</h1>
+        <p>
+            Intelligent customer purchase prediction,
+            wellness tourism insights and
+            data-driven marketing support.
+        </p>
     </div>
     """,
     unsafe_allow_html=True
 )
 
 # ------------------------------------------------------------
-# 5. Sidebar Navigation
+# 5. Sidebar — Prediction Scenario
 # ------------------------------------------------------------
 
 with st.sidebar:
+
     st.title("🧭 Prediction Center")
 
     model_choice = st.radio(
-        "Prediction Scenario",
-        ["model_b", "model_a"],
-        format_func=lambda key: (
-            CONFIG["models"][key]["display_name"]
+        "Select Prediction Scenario",
+        options=["model_b", "model_a"],
+        format_func=lambda track: (
+            CONFIG["models"][track]["display_name"]
         )
     )
 
-    metadata = MANIFEST["champions"][model_choice]
+    model_metadata = MANIFEST[
+        "champions"
+    ][model_choice]
 
     st.divider()
     st.subheader("🤖 Champion Model")
-    st.write("**Algorithm:**", metadata["algorithm"])
-    st.write("**Features:**", len(metadata["feature_names"]))
-    st.write("**Variant:**", metadata.get("variant", "champion"))
+
+    st.write(
+        "**Algorithm:**",
+        model_metadata["algorithm"]
+    )
+
+    st.write(
+        "**Features:**",
+        len(model_metadata["feature_names"])
+    )
+
+    st.write(
+        "**Variant:**",
+        model_metadata.get("variant", "champion")
+    )
+
+    st.divider()
 
     st.caption(
-        "Predictions are estimates and do not guarantee "
-        "customer purchasing behavior."
+        "Predictions are statistical estimates, "
+        "not guaranteed customer outcomes."
     )
 
 # ------------------------------------------------------------
-# 6. Model-Specific Feature Configuration
+# 6. Validate Model Feature Configuration
 # ------------------------------------------------------------
 
 model_config = CONFIG["models"][model_choice]
-feature_names = metadata["feature_names"]
+
+feature_names = model_metadata["feature_names"]
+
 feature_specs = FEATURE_METADATA[model_choice]
 
 if list(feature_specs) != feature_names:
-    st.error("Model feature configuration mismatch.")
+    st.error(
+        "Feature configuration does not match the "
+        "published champion model."
+    )
     st.stop()
 
-st.subheader(model_config["display_name"])
-st.write(model_config["description"])
+st.subheader(
+    model_config["display_name"]
+)
+
+st.write(
+    model_config["description"]
+)
+
+st.info(
+    "Enter customer information below. "
+    "The form uses the model's registered feature schema."
+)
 
 # ------------------------------------------------------------
 # 7. Dynamic Customer Input Form
@@ -173,56 +220,86 @@ st.write(model_config["description"])
 
 customer_inputs = {}
 
-with st.form(f"prediction_form_{model_choice}"):
+with st.form(
+    key=f"prediction_form_{model_choice}",
+    clear_on_submit=False
+):
 
-    left, right = st.columns(2)
+    left_column, right_column = st.columns(2)
 
     for index, feature in enumerate(feature_names):
 
-        spec = feature_specs[feature]
-        label = feature.replace("_", " ").strip()
+        specification = feature_specs[feature]
 
-        with (left if index % 2 == 0 else right):
+        field_label = (
+            feature.replace("_", " ").strip()
+        )
 
-            if spec["type"] == "numeric":
+        with (
+            left_column
+            if index % 2 == 0
+            else right_column
+        ):
 
-                default = float(spec.get("default", 0.0))
+            if specification["type"] == "numeric":
 
-                customer_inputs[feature] = st.number_input(
-                    label,
-                    value=default,
-                    step=1.0,
-                    help=(
-                        "Training range: "
-                        f"{spec.get('minimum')} to "
-                        f"{spec.get('maximum')}"
-                    ),
-                    key=f"{model_choice}_{feature}"
+                default_value = float(
+                    specification.get("default", 0.0)
                 )
 
-            elif spec["type"] == "categorical":
+                minimum = specification.get("minimum")
+                maximum = specification.get("maximum")
 
-                options = spec.get("categories", [])
+                customer_inputs[feature] = (
+                    st.number_input(
+                        label=field_label,
+                        value=default_value,
+                        step=1.0,
+                        help=(
+                            "Observed training range: "
+                            f"{minimum} to {maximum}. "
+                            "This range is informational."
+                        ),
+                        key=f"{model_choice}_{feature}"
+                    )
+                )
 
-                if not options:
-                    st.error(f"No categories available for {label}.")
+            elif specification["type"] == "categorical":
+
+                categories = specification.get(
+                    "categories", []
+                )
+
+                if not categories:
+                    st.error(
+                        f"No categories configured for "
+                        f"{field_label}."
+                    )
                     st.stop()
 
-                default = spec.get("default")
-                selected_index = (
-                    options.index(default)
-                    if default in options else 0
+                default_category = specification.get(
+                    "default"
                 )
 
-                customer_inputs[feature] = st.selectbox(
-                    label,
-                    options=options,
-                    index=selected_index,
-                    key=f"{model_choice}_{feature}"
+                default_index = (
+                    categories.index(default_category)
+                    if default_category in categories
+                    else 0
+                )
+
+                customer_inputs[feature] = (
+                    st.selectbox(
+                        label=field_label,
+                        options=categories,
+                        index=default_index,
+                        key=f"{model_choice}_{feature}"
+                    )
                 )
 
             else:
-                st.error(f"Unsupported feature type: {feature}")
+                st.error(
+                    f"Unsupported feature type: {feature}"
+                )
                 st.stop()
 
     submitted = st.form_submit_button(
@@ -232,113 +309,171 @@ with st.form(f"prediction_form_{model_choice}"):
     )
 
 # ------------------------------------------------------------
-# 8. Prediction & Results
+# 8. Prediction Execution
 # ------------------------------------------------------------
 
 if submitted:
+
     try:
-        result = predict_customer(
-            model=MODELS[model_choice],
-            customer_data=customer_inputs,
-            feature_metadata=feature_specs,
-            expected_features=feature_names,
-            threshold=model_config.get("threshold", 0.50)
+        with st.spinner(
+            "Analyzing customer purchase likelihood..."
+        ):
+
+            result = predict_customer(
+                model=MODELS[model_choice],
+                customer_data=customer_inputs,
+                feature_metadata=feature_specs,
+                expected_features=feature_names,
+                threshold=model_config.get(
+                    "threshold", 0.50
+                )
+            )
+
+        probability = float(
+            result["purchase_probability"]
         )
 
-        probability = result["purchase_probability"]
-        threshold = result["decision_threshold"]
+        threshold = float(
+            result["decision_threshold"]
+        )
 
         st.divider()
         st.subheader("📊 Prediction Results")
 
-        c1, c2, c3 = st.columns(3)
+        # ----------------------------------------------------
+        # 9. Prediction Summary Cards
+        # ----------------------------------------------------
 
-        c1.metric(
+        metric_1, metric_2, metric_3 = st.columns(3)
+
+        metric_1.metric(
             "Purchase Probability",
             format_probability(probability)
         )
-        c2.metric(
+
+        metric_2.metric(
             "Non-Purchase Probability",
             format_probability(1 - probability)
         )
-        c3.metric(
+
+        metric_3.metric(
             "Decision Threshold",
             format_probability(threshold)
         )
 
         # ----------------------------------------------------
-        # Probability Gauge
+        # 10. Probability Gauge
         # ----------------------------------------------------
 
-        gauge = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=probability * 100,
-            number={"suffix": "%"},
-            title={"text": "Estimated Purchase Likelihood"},
-            gauge={
-                "axis": {"range": [0, 100]},
-                "bar": {
-                    "color": (
-                        THEME["success"]
-                        if result["predicted_class"] == 1
-                        else THEME["warning"]
-                    )
+        gauge_color = (
+            THEME["success"]
+            if result["predicted_class"] == 1
+            else THEME["warning"]
+        )
+
+        gauge = go.Figure(
+            go.Indicator(
+                mode="gauge+number",
+                value=probability * 100,
+                number={"suffix": "%"},
+                title={
+                    "text": "Estimated Purchase Likelihood"
                 },
-                "steps": [
-                    {"range": [0, 35], "color": "#FDE8E5"},
-                    {"range": [35, 65], "color": "#FFF2D8"},
-                    {"range": [65, 100], "color": "#DDF4EA"}
-                ],
-                "threshold": {
-                    "line": {
-                        "color": "#16324F",
-                        "width": 4
+                gauge={
+                    "axis": {
+                        "range": [0, 100]
                     },
-                    "value": threshold * 100
+                    "bar": {
+                        "color": gauge_color
+                    },
+                    "steps": [
+                        {
+                            "range": [0, 35],
+                            "color": "#FDE8E5"
+                        },
+                        {
+                            "range": [35, 65],
+                            "color": "#FFF2D8"
+                        },
+                        {
+                            "range": [65, 100],
+                            "color": "#DDF4EA"
+                        }
+                    ],
+                    "threshold": {
+                        "line": {
+                            "color": "#16324F",
+                            "width": 4
+                        },
+                        "thickness": 0.8,
+                        "value": threshold * 100
+                    }
                 }
-            }
-        ))
+            )
+        )
 
         gauge.update_layout(
             height=330,
-            margin=dict(l=30, r=30, t=60, b=20)
+            margin={
+                "l": 30,
+                "r": 30,
+                "t": 60,
+                "b": 20
+            },
+            paper_bgcolor="rgba(0,0,0,0)"
         )
 
         st.plotly_chart(
             gauge,
-            use_container_width=True
+            use_container_width=True,
+            config={
+                "displayModeBar": False
+            }
         )
 
         st.caption(
-            "The threshold marker indicates the classification "
-            "decision boundary. Gauge bands are illustrative."
+            "The threshold marker represents the "
+            "classification decision boundary. "
+            "Gauge bands are illustrative."
         )
 
         # ----------------------------------------------------
-        # Purchase Probability Comparison
+        # 11. Probability Comparison Chart
         # ----------------------------------------------------
 
-        comparison = go.Figure(go.Bar(
-            x=["Purchase", "Non-Purchase"],
-            y=[probability * 100, (1 - probability) * 100],
-            marker_color=[
-                THEME["success"],
-                THEME["danger"]
-            ],
-            text=[
-                f"{probability:.1%}",
-                f"{1 - probability:.1%}"
-            ],
-            textposition="outside",
-            name="Estimated Probability"
-        ))
+        comparison = go.Figure(
+            go.Bar(
+                x=[
+                    "Purchase",
+                    "Non-Purchase"
+                ],
+                y=[
+                    probability * 100,
+                    (1 - probability) * 100
+                ],
+                marker_color=[
+                    THEME["success"],
+                    THEME["danger"]
+                ],
+                text=[
+                    f"{probability:.1%}",
+                    f"{1 - probability:.1%}"
+                ],
+                textposition="outside",
+                name="Predicted Probability"
+            )
+        )
 
         comparison.update_layout(
-            title="Purchase vs Non-Purchase Probability",
-            yaxis_title="Probability (%)",
+            title=(
+                "Purchase vs Non-Purchase Probability"
+            ),
+            xaxis_title="Prediction Outcome",
+            yaxis_title="Estimated Probability (%)",
             yaxis_range=[0, 110],
             height=350,
-            showlegend=True
+            showlegend=True,
+            paper_bgcolor="rgba(0,0,0,0)"
         )
 
         st.plotly_chart(
@@ -347,31 +482,49 @@ if submitted:
         )
 
         # ----------------------------------------------------
-        # Business Interpretation
+        # 12. Business Interpretation
         # ----------------------------------------------------
 
         st.subheader("🎯 Business Interpretation")
 
         if result["predicted_class"] == 1:
-            st.success(result["predicted_label"])
+            st.success(
+                result["predicted_label"]
+            )
         else:
-            st.warning(result["predicted_label"])
+            st.warning(
+                result["predicted_label"]
+            )
 
-        st.write(prediction_interpretation(result))
+        st.write(
+            prediction_interpretation(result)
+        )
 
-        with st.expander("📋 Customer Input Summary"):
+        # ----------------------------------------------------
+        # 13. Safe Customer Input Summary
+        # ----------------------------------------------------
+        #
+        # Normalize all display values to strings to avoid
+        # mixed-type PyArrow serialization problems.
+        # ----------------------------------------------------
 
-            summary_rows = [
-                {
+        with st.expander(
+            "📋 Customer Input Summary"
+        ):
+
+            summary_rows = []
+
+            for feature, value in customer_inputs.items():
+
+                if value is None:
+                    display_value = "Not provided"
+                else:
+                    display_value = str(value)
+
+                summary_rows.append({
                     "Feature": str(feature),
-                    "Value": (
-                        "Not provided"
-                        if value is None or pd.isna(value)
-                        else str(value)
-                    )
-                }
-                for feature, value in customer_inputs.items()
-            ]
+                    "Value": display_value
+                })
 
             summary_df = pd.DataFrame(
                 summary_rows,
@@ -384,32 +537,51 @@ if submitted:
                 hide_index=True
             )
 
+        st.caption(
+            "This application does not intentionally "
+            "persist customer inputs or prediction results."
+        )
+
         LOGGER.info(
-            "Prediction completed for model track %s.",
+            "Prediction completed for %s.",
             model_choice
         )
 
     except InputValidationError as exc:
-        st.error(friendly_error_message(exc))
+        st.error(
+            friendly_error_message(exc)
+        )
 
-    except (ModelIntegrityError, ModelInferenceError) as exc:
-        LOGGER.exception("Prediction service failed.")
-        st.error(friendly_error_message(exc))
+    except (
+        ModelIntegrityError,
+        ModelInferenceError
+    ) as exc:
+
+        LOGGER.exception(
+            "Prediction service failure."
+        )
+
+        st.error(
+            friendly_error_message(exc)
+        )
 
     except Exception:
-        LOGGER.exception("Unexpected prediction failure.")
+        LOGGER.exception(
+            "Unexpected Streamlit prediction failure."
+        )
+
         st.error(
             "An unexpected error occurred. "
             "Please try again later."
         )
 
 # ------------------------------------------------------------
-# 9. Footer
+# 14. Application Footer
 # ------------------------------------------------------------
 
 st.divider()
 
 st.caption(
-    "Visit with Us — Enterprise MLOps | "
+    "🌍 Visit with Us — Enterprise MLOps | "
     "Python • scikit-learn • GitHub Actions • Streamlit"
 )

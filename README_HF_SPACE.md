@@ -10,18 +10,25 @@ pinned: false
 
 # Visit with Us — Wellness Tourism AI
 
-An interactive Streamlit application for customer
-purchase likelihood prediction.
+Interactive machine learning application for predicting
+customer purchase likelihood for wellness tourism packages.
 
-## Models
+## Prediction Models
+
 - Model A: Historical Purchase Prediction
 - Model B: Pre-Contact Purchase Prediction
 
 ## Technology
-Python, scikit-learn, GitHub Actions, Streamlit.
 
-## Security
-Only trusted, checksum-verified model artifacts are loaded.
+Python, scikit-learn, Streamlit, Plotly, Docker,
+GitHub Actions and Hugging Face Spaces.
+
+## Model Integrity
+
+Champion artifacts are verified using SHA-256 checksums
+before trusted model deserialization.
 
 ## Disclaimer
-Predictions are statistical estimates, not guarantees.
+
+Predictions are statistical estimates, not guaranteed
+customer outcomes.

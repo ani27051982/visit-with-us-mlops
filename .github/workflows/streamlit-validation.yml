@@ -1,8 +1,9 @@
 name: Streamlit Application Validation
 
-on:
+'on':
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - "app/**"
       - "published-models/**"
@@ -43,7 +44,9 @@ jobs:
 
       - name: Streamlit application smoke test
         run: |
-          python -m streamlit run app/streamlit_app.py             --server.headless=true             --server.port=8501 &
+          python -m streamlit run app/streamlit_app.py \
+            --server.headless=true \
+            --server.port=8501 > streamlit.log 2>&1 &
           APP_PID=$!
           trap 'kill $APP_PID 2>/dev/null || true' EXIT
           python - <<'PY'
