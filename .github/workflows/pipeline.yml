@@ -1,157 +1,289 @@
 name: Visit with Us — MLOps Pipeline
+
+'on':
+  push:
+    branches:
+      - main
+    paths:
+      - "data/raw/**"
+      - "scripts/**"
+      - "src/**"
+      - "config/pipeline.json"
+      - "requirements-train.txt"
+      - ".github/workflows/pipeline.yml"
+
+  workflow_dispatch:
+    inputs:
+      publish_models:
+        description: Publish approved champion models
+        required: true
+        type: boolean
+        default: false
+
 permissions:
   contents: read
+
 concurrency:
   group: visit-with-us-mlops-${{ github.ref }}
   cancel-in-progress: false
+
 jobs:
+
   register-data:
     name: Register Dataset
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
-        cache: pip
-    - name: Install dependencies
-      run: pip install -r requirements.txt
-    - name: Verify public tourism dataset
-      run: "test -s data/raw/tourism.csv || {\n  echo \"::error::tourism.csv missing\
-        \ or empty\"\n  exit 1\n}\n"
-    - name: Register dataset
-      run: 'python scripts/register_data.py --data data/raw/tourism.csv --config config/pipeline.json
-        --output artifacts/registration
 
-        '
-    - name: Upload registered inputs
-      uses: actions/upload-artifact@v6
-      with:
-        name: registered-inputs
-        path: artifacts/registration/
-        retention-days: 1
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-train.txt
+
+      - name: Install training dependencies
+        run: python -m pip install -r requirements-train.txt
+
+      - name: Verify public tourism dataset
+        run: |
+          test -s data/raw/tourism.csv || {
+            echo "::error::Public dataset missing"
+            exit 1
+          }
+
+      - name: Register dataset
+        run: |
+          python scripts/register_data.py \
+            --data data/raw/tourism.csv \
+            --config config/pipeline.json \
+            --output artifacts/registration
+
+      - name: Upload registration evidence
+        uses: actions/upload-artifact@v6
+        with:
+          name: registered-inputs
+          path: artifacts/registration/
+          retention-days: 7
+          if-no-files-found: error
+
   prepare-data:
     name: Prepare Dataset
     needs: register-data
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
-        cache: pip
-    - run: pip install -r requirements.txt
-    - uses: actions/download-artifact@v7
-      with:
-        name: registered-inputs
-        path: .
-    - name: Prepare dual-model datasets
-      run: 'python scripts/prepare_data.py --data data/raw/tourism.csv --config config/pipeline.json
-        --output artifacts/prepared
 
-        '
-    - name: Upload prepared datasets
-      uses: actions/upload-artifact@v6
-      with:
-        name: prepared-data
-        path: artifacts/prepared/
-        retention-days: 1
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-train.txt
+
+      - name: Install training dependencies
+        run: python -m pip install -r requirements-train.txt
+
+      - name: Download registration evidence
+        uses: actions/download-artifact@v7
+        with:
+          name: registered-inputs
+          path: artifacts/registration
+
+      - name: Prepare dual-model datasets
+        run: |
+          python scripts/prepare_data.py \
+            --data data/raw/tourism.csv \
+            --config config/pipeline.json \
+            --output artifacts/prepared
+
+      - name: Upload prepared datasets
+        uses: actions/upload-artifact@v6
+        with:
+          name: prepared-data
+          path: artifacts/prepared/
+          retention-days: 1
+          if-no-files-found: error
+
   train-models:
     name: Train & Optimize Models
     needs: prepare-data
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+
     steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
-        cache: pip
-    - run: pip install -r requirements.txt
-    - uses: actions/download-artifact@v7
-      with:
-        name: prepared-data
-        path: artifacts/prepared
-    - name: Train models
-      run: "python scripts/train_models.py \\\n  --prepared artifacts/prepared \\\n\
-        \  --config config/pipeline.json \\\n  --output artifacts/training \\\n  --iterations\
-        \ 8\n"
-    - name: Upload model artifacts
-      uses: actions/upload-artifact@v6
-      with:
-        name: trained-models
-        path: artifacts/training/
-        retention-days: 7
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-train.txt
+
+      - name: Install training dependencies
+        run: python -m pip install -r requirements-train.txt
+
+      - name: Download prepared datasets
+        uses: actions/download-artifact@v7
+        with:
+          name: prepared-data
+          path: artifacts/prepared
+
+      - name: Train champion models
+        run: |
+          python scripts/train_models.py \
+            --prepared artifacts/prepared \
+            --config config/pipeline.json \
+            --output artifacts/training \
+            --iterations 8
+
+      - name: Upload trained champions
+        uses: actions/upload-artifact@v6
+        with:
+          name: trained-models
+          path: artifacts/training/
+          retention-days: 7
+          if-no-files-found: error
+
   validate-artifacts:
     name: Validate Model Artifacts
     needs: train-models
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+
     steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
-        cache: pip
-    - run: pip install -r requirements.txt
-    - uses: actions/download-artifact@v7
-      with:
-        name: trained-models
-        path: artifacts/training
-    - name: Validate artifacts
-      run: "python scripts/validate_artifacts.py \\\n  --training artifacts/training\
-        \ \\\n  --output artifacts/validation\n"
-    - uses: actions/upload-artifact@v6
-      with:
-        name: validation-evidence
-        path: artifacts/validation/
-        retention-days: 30
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-train.txt
+
+      - name: Install training dependencies
+        run: python -m pip install -r requirements-train.txt
+
+      - name: Download trained champions
+        uses: actions/download-artifact@v7
+        with:
+          name: trained-models
+          path: artifacts/training
+
+      - name: Validate champion artifacts
+        run: |
+          python scripts/validate_artifacts.py \
+            --training artifacts/training \
+            --output artifacts/validation
+
+      - name: Upload validation evidence
+        uses: actions/upload-artifact@v6
+        with:
+          name: validation-evidence
+          path: artifacts/validation/
+          retention-days: 30
+          if-no-files-found: error
+
   publish-models:
     name: Publish Approved Models
     needs: validate-artifacts
-    if: github.event_name == 'workflow_dispatch' && inputs.publish_models == true
-      && github.ref == 'refs/heads/main'
+
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.publish_models == true &&
+      github.ref == 'refs/heads/main'
+
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+
     permissions:
       contents: write
+
     steps:
-    - uses: actions/checkout@v6
-      with:
-        persist-credentials: true
-    - uses: actions/download-artifact@v7
-      with:
-        name: trained-models
-        path: artifacts/training
-    - uses: actions/download-artifact@v7
-      with:
-        name: validation-evidence
-        path: artifacts/validation
-    - name: Verify validation gate
-      run: "python - <<'PY'\nimport json\nfrom pathlib import Path\n\nreport = json.loads(\n\
-        \    Path(\n        \"artifacts/validation/validation_report.json\"\n    ).read_text()\n\
-        )\n\nif report[\"status\"] != \"PASSED\":\n    raise SystemExit(\"Validation\
-        \ gate failed.\")\n\nif set(report[\"models\"]) != {\n    \"model_a\", \"\
-        model_b\"\n}:\n    raise SystemExit(\"Model validation incomplete.\")\nPY\n"
-    - name: Stage approved model artifacts
-      run: "mkdir -p published-models\ncp artifacts/training/model_a_champion.joblib\
-        \ \\\n   published-models/\ncp artifacts/training/model_b_champion.joblib\
-        \ \\\n   published-models/\ncp artifacts/training/champion_manifest.json \\\
-        \n   published-models/\n"
-    - name: Commit approved models
-      run: "git config user.name \"github-actions[bot]\"\ngit config user.email \\\
-        \n  \"41898282+github-actions[bot]@users.noreply.github.com\"\n\ngit add -f published-models/model_a_champion.joblib published-models/model_b_champion.joblib
-git add published-models/champion_manifest.json\n\
-        \nif git diff --cached --quiet; then\n  echo \"No model artifact changes to\
-        \ publish.\"\nelse\n  git commit -m \"Publish validated MLOps champion models\"\
-        \n  git push origin HEAD:main\nfi\n"
-'on':
-  workflow_dispatch:
-    inputs:
-      publish_models:
-        description: Publish approved model artifacts
-        required: true
-        type: boolean
-        default: false
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: trained-models
+          path: artifacts/training
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: validation-evidence
+          path: artifacts/validation
+
+      - name: Verify validation gate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(
+              Path(
+                  "artifacts/validation/validation_report.json"
+              ).read_text(encoding="utf-8")
+          )
+
+          if report.get("status") != "PASSED":
+              raise SystemExit("Validation gate failed.")
+
+          if set(report.get("models", {})) != {
+              "model_a", "model_b"
+          }:
+              raise SystemExit(
+                  "Both champions must pass validation."
+              )
+          PY
+
+      - name: Stage approved champion artifacts
+        run: |
+          set -euo pipefail
+
+          mkdir -p published-models
+
+          for track in model_a model_b; do
+            test -s "artifacts/training/${track}_champion.joblib"
+          done
+
+          test -s artifacts/training/champion_manifest.json
+
+          cp artifacts/training/model_a_champion.joblib \
+            published-models/model_a_champion.joblib
+
+          cp artifacts/training/model_b_champion.joblib \
+            published-models/model_b_champion.joblib
+
+          cp artifacts/training/champion_manifest.json \
+            published-models/champion_manifest.json
+
+          git add -f \
+            published-models/model_a_champion.joblib \
+            published-models/model_b_champion.joblib
+
+          git add published-models/champion_manifest.json
+
+          for file in \
+            published-models/model_a_champion.joblib \
+            published-models/model_b_champion.joblib \
+            published-models/champion_manifest.json
+          do
+            git ls-files --error-unmatch "$file" >/dev/null
+          done
+
+      - name: Commit approved champion models
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git diff --cached --quiet; then
+            echo "Approved champion artifacts unchanged."
+          else
+            git commit -m "Publish validated MLOps champions"
+            git push origin HEAD:main
+          fi

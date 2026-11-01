@@ -1,4 +1,4 @@
-"""Prepare leakage-safe training and holdout datasets."""
+"""Prepare leakage-safe dual-model training datasets."""
 
 import argparse
 import hashlib
@@ -10,26 +10,40 @@ from pathlib import Path
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-LOGGER = logging.getLogger("visit_with_us.prepare")
+LOGGER = logging.getLogger("visit_with_us.preparation")
 
 
 def sha256_file(path):
     digest = hashlib.sha256()
+
     with Path(path).open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+        for chunk in iter(
+            lambda: stream.read(1024 * 1024),
+            b""
+        ):
             digest.update(chunk)
+
     return digest.hexdigest()
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", required=True)
+
     parser.add_argument(
-        "--config", default="config/pipeline.json"
+        "--data",
+        default="data/raw/tourism.csv"
     )
+
     parser.add_argument(
-        "--output", default="artifacts/prepared"
+        "--config",
+        default="config/pipeline.json"
     )
+
+    parser.add_argument(
+        "--output",
+        default="artifacts/prepared"
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -43,7 +57,7 @@ def main():
 
     if not source.is_file():
         raise FileNotFoundError(
-            f"Source dataset missing: {source}"
+            f"Dataset missing: {source}"
         )
 
     config = json.loads(
@@ -51,6 +65,7 @@ def main():
     )
 
     dataset_config = config["dataset"]
+
     target = dataset_config["target"]
     customer_id = dataset_config["customer_id"]
 
@@ -60,42 +75,67 @@ def main():
         raise ValueError("Dataset is empty.")
 
     if df.columns.duplicated().any():
-        raise ValueError("Duplicate column names detected.")
+        raise ValueError(
+            "Duplicate dataset column names detected."
+        )
+
+    for column in [target, customer_id]:
+        if column not in df.columns:
+            raise ValueError(
+                f"Required column missing: {column}"
+            )
 
     if df[customer_id].isna().any():
-        raise ValueError("Missing customer identifiers.")
+        raise ValueError(
+            "Missing customer identifiers."
+        )
 
     if df[customer_id].duplicated().any():
-        raise ValueError("Duplicate customer identifiers.")
+        raise ValueError(
+            "Duplicate customer identifiers."
+        )
 
     if df[target].isna().any():
-        raise ValueError("Missing target values.")
+        raise ValueError(
+            "Missing target values."
+        )
 
     if set(df[target].unique()) != {0, 1}:
-        raise ValueError("Target must contain classes 0 and 1.")
+        raise ValueError(
+            "Target must contain binary classes 0 and 1."
+        )
 
-    # Normalize categorical text without fitting transforms.
+    # Normalize categorical text without fitting encoders.
     for column in df.select_dtypes(
         include=["object", "string"]
     ).columns:
+
         if column != customer_id:
             df[column] = (
-                df[column].astype("string").str.strip()
+                df[column]
+                .astype("string")
+                .str.strip()
                 .replace("", pd.NA)
             )
 
-    test_size = float(dataset_config["test_size"])
-    random_state = int(dataset_config["random_state"])
+    test_size = float(
+        dataset_config["test_size"]
+    )
+
+    random_state = int(
+        dataset_config["random_state"]
+    )
 
     if not 0 < test_size < 1:
-        raise ValueError("test_size must be between 0 and 1.")
+        raise ValueError(
+            "test_size must be between 0 and 1."
+        )
 
     if df[target].value_counts().min() < 2:
         raise ValueError(
-            "Both target classes need at least two records."
+            "Insufficient records for stratified splitting."
         )
 
-    # Create one shared split for both models.
     train_df, test_df = train_test_split(
         df,
         test_size=test_size,
@@ -103,17 +143,28 @@ def main():
         stratify=df[target]
     )
 
-    train_ids = set(train_df[customer_id])
-    test_ids = set(test_df[customer_id])
+    train_ids = set(
+        train_df[customer_id]
+    )
+
+    test_ids = set(
+        test_df[customer_id]
+    )
 
     if not train_ids.isdisjoint(test_ids):
-        raise RuntimeError("Customer leakage across splits.")
+        raise RuntimeError(
+            "Customer leakage detected across splits."
+        )
 
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
     artifacts = {}
+    feature_counts = {}
 
-    for model_name, model_config in config["models"].items():
+    for track, model_config in config["models"].items():
 
         exclusions = (
             set(model_config["excluded_columns"])
@@ -121,24 +172,35 @@ def main():
         )
 
         features = [
-            col for col in df.columns
-            if col not in exclusions
+            column
+            for column in df.columns
+            if column not in exclusions
         ]
 
         if not features:
             raise ValueError(
-                f"{model_name}: no predictive features."
+                f"{track}: no eligible features."
             )
 
-        model_dir = output_dir / model_name
-        model_dir.mkdir(parents=True, exist_ok=True)
+        feature_counts[track] = len(features)
+
+        model_dir = (
+            output_dir / track
+        )
+
+        model_dir.mkdir(
+            parents=True,
+            exist_ok=True
+        )
 
         for split_name, split_df in [
             ("train", train_df),
             ("test", test_df)
         ]:
+
             feature_path = (
-                model_dir / f"{split_name}_features.csv"
+                model_dir
+                / f"{split_name}_features.csv"
             )
 
             split_df[features].to_csv(
@@ -147,21 +209,23 @@ def main():
             )
 
             artifacts[
-                f"{model_name}_{split_name}"
+                f"{track}_{split_name}"
             ] = str(feature_path)
 
         LOGGER.info(
             "%s prepared with %d features.",
-            model_name, len(features)
+            track,
+            len(features)
         )
 
-    # Save shared targets separately.
     for split_name, split_df in [
         ("train", train_df),
         ("test", test_df)
     ]:
+
         target_path = (
-            output_dir / f"{split_name}_target.csv"
+            output_dir
+            / f"{split_name}_target.csv"
         )
 
         split_df[[target]].to_csv(
@@ -173,23 +237,27 @@ def main():
             f"{split_name}_target"
         ] = str(target_path)
 
-    # Customer IDs are private traceability artifacts.
-    # Do not publish them to public repository branches.
-    for split_name, split_df in [
-        ("train", train_df),
-        ("test", test_df)
-    ]:
-        ids_path = output_dir / f"{split_name}_ids.csv"
-        split_df[[customer_id]].to_csv(
-            ids_path, index=False
+        # Customer identifiers are retained only in
+        # private workflow artifacts for traceability.
+        ids_path = (
+            output_dir
+            / f"{split_name}_ids.csv"
         )
-        artifacts[f"{split_name}_ids"] = str(ids_path)
+
+        split_df[[customer_id]].to_csv(
+            ids_path,
+            index=False
+        )
+
+        artifacts[
+            f"{split_name}_ids"
+        ] = str(ids_path)
+
+    checksum = sha256_file(source)
 
     manifest = {
-        "dataset_sha256": sha256_file(source),
-        "dataset_version": (
-            f"sha256-{sha256_file(source)[:16]}"
-        ),
+        "dataset_sha256": checksum,
+        "dataset_version": f"sha256-{checksum[:16]}",
         "train_records": int(len(train_df)),
         "test_records": int(len(test_df)),
         "train_purchase_rate": float(
@@ -198,21 +266,26 @@ def main():
         "test_purchase_rate": float(
             test_df[target].mean()
         ),
+        "feature_counts": feature_counts,
         "artifacts": artifacts,
         "created_at_utc": datetime.now(
             timezone.utc
         ).isoformat()
     }
 
-    manifest_path = output_dir / "prepared_manifest.json"
+    manifest_path = (
+        output_dir / "prepared_manifest.json"
+    )
+
     manifest_path.write_text(
         json.dumps(manifest, indent=2),
         encoding="utf-8"
     )
 
     LOGGER.info(
-        "Data preparation complete: train=%d, test=%d",
-        len(train_df), len(test_df)
+        "Data preparation completed: train=%d, test=%d",
+        len(train_df),
+        len(test_df)
     )
 
     print(json.dumps(manifest, indent=2))
@@ -222,5 +295,7 @@ if __name__ == "__main__":
     try:
         main()
     except Exception:
-        LOGGER.exception("Data preparation failed.")
+        LOGGER.exception(
+            "Dataset preparation failed."
+        )
         raise

@@ -57,3 +57,14 @@ published-models/*.tmp
 # Approved champion model artifacts
 !published-models/model_a_champion.joblib
 !published-models/model_b_champion.joblib
+# ========================================================
+# VISIT WITH US — ENTERPRISE MLOPS
+# Git ignore rules
+# Credentials and secrets
+# Python caches and virtual environments
+# Logs and temporary files
+# Private and generated datasets
+# Customer-level predictions
+# Generated experiments and reports
+# Serialized models
+# Temporary published artifacts
