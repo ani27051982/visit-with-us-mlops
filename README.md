@@ -25,28 +25,56 @@ Customer-level data, predictions, logs and credentials
 must not be committed to public repositories.
 
 ## Status
-GitHub Actions implementation in progress.
+GitHub Actions CI/CD implementation completed.
 
 <!-- DEPLOYMENT_LINKS_START -->
 
-## 🌐 Live Application Deployments
-
-The Visit with Us — Enterprise MLOps project is deployed
-on two cloud platforms.
+## 🌐 Live Cloud Deployments
 
 ### 🚀 Streamlit Community Cloud
 
 **Live Application:** [https://visit-with-us-wellness-ai.streamlit.app/](https://visit-with-us-wellness-ai.streamlit.app/)
 
-Interactive prediction application supporting Model A
-and Model B, customer input forms, purchase probabilities
-and business interpretation.
+Supports both prediction scenarios, interactive customer
+forms, probability visualizations and business interpretations.
 
 ### 🤗 Hugging Face Spaces
 
 **Live Docker Space:** [https://huggingface.co/spaces/animesh27051982/visit-with-us-wellness-ai](https://huggingface.co/spaces/animesh27051982/visit-with-us-wellness-ai)
 
-Docker-based deployment of the same prediction application,
-using verified champion models and pinned dependencies.
+Docker-based deployment using verified champion models,
+Python 3.11 and pinned dependencies.
 
 <!-- DEPLOYMENT_LINKS_END -->
+
+<!-- CICD_STATUS_START -->
+
+## ⚙️ GitHub Actions — CI/CD Implementation
+
+**Implementation Status: Completed**
+
+The project implements an automated five-job MLOps pipeline:
+
+1. **Register Dataset** — Validates the approved tourism dataset.
+2. **Prepare Dataset** — Performs leakage-safe data preparation.
+3. **Train & Optimize Models** — Trains and tunes both classifiers.
+4. **Validate Model Artifacts** — Applies quality and integrity checks.
+5. **Publish Approved Models** — Publishes validated champion artifacts when manually authorized.
+
+### Automation
+
+- Automatic CI execution is configured for relevant source changes on `main`.
+- Manual execution remains available through `workflow_dispatch`.
+- Champion model publishing requires explicit authorization.
+- GitHub Actions uses Python 3.11 and Ubuntu 24.04.
+- Automated application validation is configured for Streamlit changes.
+
+### Published Champion Models
+
+- `published-models/model_a_champion.joblib`
+- `published-models/model_b_champion.joblib`
+- `published-models/champion_manifest.json`
+
+Both champion artifacts are protected by SHA-256 integrity verification.
+
+<!-- CICD_STATUS_END -->
