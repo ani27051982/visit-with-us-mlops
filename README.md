@@ -1,5 +1,29 @@
 # Visit with Us — Enterprise MLOps
 
+<!-- GITHUB_ACTIONS_BADGES_START -->
+
+## 🔄 CI/CD Pipeline Status
+
+The following badges display the current GitHub Actions
+workflow status for the `main` branch.
+
+[![MLOps Pipeline](https://github.com/ani27051982/visit-with-us-mlops/actions/workflows/pipeline.yml/badge.svg?branch=main)](https://github.com/ani27051982/visit-with-us-mlops/actions/workflows/pipeline.yml)
+[![Streamlit Validation](https://github.com/ani27051982/visit-with-us-mlops/actions/workflows/streamlit-validation.yml/badge.svg?branch=main)](https://github.com/ani27051982/visit-with-us-mlops/actions/workflows/streamlit-validation.yml)
+
+### Automated Workflow Verification
+
+| Workflow | Execution | Latest Verified Run |
+|---|---|---|
+| MLOps Pipeline | Push + Manual | [Successful automatic run](https://github.com/ani27051982/visit-with-us-mlops/actions/runs/41280048719) |
+| Streamlit Validation | Push + Manual | [Successful automatic run](https://github.com/ani27051982/visit-with-us-mlops/actions/runs/41281006920) |
+
+**Model publishing:** Manual approval is required
+through `publish_models = true`. Automatic push
+events perform validation without publishing champions.
+
+<!-- GITHUB_ACTIONS_BADGES_END -->
+
+
 ## Business Objective
 Predict customer purchases of the Wellness Tourism Package
 using reproducible machine learning pipelines.
